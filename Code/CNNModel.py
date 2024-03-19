@@ -102,4 +102,8 @@ class CNNModel:
                             epochs=epochs, batch_size=batch_size,
                             validation_data=(X_val, self.y_val))
 
+    def get_model(self):
+        return self.model
+
+
         return history
