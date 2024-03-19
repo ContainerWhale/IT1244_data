@@ -6,6 +6,7 @@ from keras import layers, models, optimizers
 from keras.layers import GlobalAveragePooling2D, Flatten, Dense, Dropout, concatenate, Input
 from keras.models import Model
 
+#change
 
 class CNNModel:
     def __init__(self, model_name,
