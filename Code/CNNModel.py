@@ -101,9 +101,8 @@ class CNNModel:
         history = model.fit(x = X_train, y = self.y_train,
                             epochs=epochs, batch_size=batch_size,
                             validation_data=(X_val, self.y_val))
-
+        return history
+                  
     def get_model(self):
         return self.model
 
-
-        return history
