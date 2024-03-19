@@ -230,8 +230,12 @@ def symmetry_metric(img, theta, r):
     return np.mean(np.abs(scale(mirror) - scale(img)))
 
 def get_sym(X):
+    '''
+    X: A numpy array of images of shape (L, x, y, c)
+    returns a numpy array of shape (L,)
+    '''
     sym = []
     for img in X:
         theta, r = detecting_mirrorLine(img)
         sym.append(symmetry_metric(img, theta, r))
-    return sym
+    return np.array(sym)
