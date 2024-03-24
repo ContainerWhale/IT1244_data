@@ -39,7 +39,7 @@ def detecting_mirrorLine(img, show_detail = False):
     sorted_vote = mirror.sort_hexbin_by_votes(image_hexbin)
     r, theta = mirror.find_coordinate_maxhexbin(image_hexbin, sorted_vote, vertical=False)
 
-    return theta, r
+    return r, theta
     # add mirror line based on r and theta
 #     mirror.draw_mirrorLine(r, theta, title)
 
@@ -213,9 +213,76 @@ def midpoint(pi, pj):
 ### End of Jin Yiran's code
 
 
+
 ### Original
-def symmetry_metric(img, theta, r):
-    def flip(img, theta, r):
+
+class extractLine:
+    def __init__(self, X) -> None:
+        self.X = X
+        self.r_theta = []
+        for img in X:
+            r, theta = detecting_mirrorLine(img)
+            self.r_theta.append([r, theta])
+
+    def get_sym(self):
+        '''
+        X: A numpy array of images of shape (L, x, y, c)
+        returns a numpy array of shape (L,)
+        '''
+        def symmetry_metric(img, r, theta):
+            def flip(img, r, theta):
+                mat = np.array([
+                    [-np.cos(2*theta), -np.sin(2*theta), 2*r*np.cos(theta)],
+                    [-np.sin(2*theta), np.cos(2*theta), 2*r*np.sin(theta)]
+                ])
+                return cv2.warpAffine(img, mat, (img.shape[0], img.shape[1]))
+
+            def scale(img):
+                return (img - np.mean(img))/np.std(img)
+
+            mirror = flip(img, r, theta)
+            # plt.imshow(mirror)
+            return np.mean(np.abs(scale(mirror) - scale(img)))
+
+        sym = []
+        for i in range(len(self.X)):
+            sym.append(symmetry_metric(self.X[i], self.r_theta[i][0], self.r_theta[i][1]))
+        return np.array(sym)
+
+
+
+    def draw_all(self):
+        def draw_line(img, r, theta):
+                """
+                Draw mirror line based on r theta polar co-ordinate
+                """
+                new = np.copy(img)
+                for y in range(len(img)):
+                    try:
+                        x = int((r-y*np.sin(theta))/np.cos(theta))
+                        new[y][x] = 255
+                        new[y][x+1] = 255
+                    except IndexError:
+                        continue
+                return new
+        drawn = []
+        for img in self.X:
+            r, theta = detecting_mirrorLine(img)
+            drawn.append(draw_line(img, r, theta))
+        return np.array(drawn)
+
+    def blur(self, k_size):
+        '''
+        k_size: Kernel size
+        '''
+        self.X = [cv2.GaussianBlur(img, (k_size, k_size), 0) for img in self.X]
+        return self.X
+
+
+
+
+def symmetry_metric(img, r, theta):
+    def flip(img, r, theta):
         mat = np.array([
             [-np.cos(2*theta), -np.sin(2*theta), 2*r*np.cos(theta)],
             [-np.sin(2*theta), np.cos(2*theta), 2*r*np.sin(theta)]
@@ -225,7 +292,7 @@ def symmetry_metric(img, theta, r):
     def scale(img):
         return (img - np.mean(img))/np.std(img)
 
-    mirror = flip(img, theta, r)
+    mirror = flip(img, r, theta)
     # plt.imshow(mirror)
     return np.mean(np.abs(scale(mirror) - scale(img)))
 
@@ -235,7 +302,32 @@ def get_sym(X):
     returns a numpy array of shape (L,)
     '''
     sym = []
+    r_theta = []
     for img in X:
-        theta, r = detecting_mirrorLine(img)
-        sym.append(symmetry_metric(img, theta, r))
+        r, theta = detecting_mirrorLine(img)
+        r_theta.append([r, theta])
+        sym.append(symmetry_metric(img, r, theta))
     return np.array(sym)
+
+def draw_line(img, r, theta):
+        """
+        Draw mirror line based on r theta polar co-ordinate
+        """
+        new = np.copy(img)
+        for y in range(len(img)):
+            try:
+                x = int((r-y*np.sin(theta))/np.cos(theta))
+                new[y][x] = 255
+                new[y][x+1] = 255
+            except IndexError:
+                continue
+        return new
+
+def draw_all(X):
+    drawn = []
+    for img in X:
+        r, theta = detecting_mirrorLine(img)
+        drawn.append(draw_line(img, r, theta))
+    return np.array(drawn)
+
+
